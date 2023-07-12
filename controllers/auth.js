@@ -23,9 +23,11 @@ const handleUserSignUp = async (req, res) => {
 
     if (user) return res.status(400).res("This email is already taken.");
 
+    // encryption of password
     const salt = await bcrypt.genSalt(12);
     const hashedPass = await bcrypt.hash(clientPassword, salt);
 
+    // user object creation
     const newUser = new User({
       name,
       email,
@@ -34,16 +36,17 @@ const handleUserSignUp = async (req, res) => {
       interests: interests || [],
     });
 
+    // user wallet creation
     const rewardWallet = new Reward({
-      userId: user._id,
+      userId: newUser._id,
     });
 
-    await rewardWallet.save();
-
+    // updating objects in database
     user = await newUser.save();
+    const userWallet = await rewardWallet.save();
 
     const { password, ...others } = user._doc;
-    const { points } = rewardWallet._doc;
+    const { points } = userWallet._doc;
 
     res.status(200).json({ user: { ...others, points } });
   } catch (err) {
@@ -65,35 +68,44 @@ const handleUserLogin = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user || (await bcrypt.compare(password, user.password))) {
-      const now = new Date().getTime();
-      const oneDay = 24 * 60 * 60 * 1000;
-
       let rewardWallet = await Reward.findOne({ userId: user._id });
 
-      if (rewardWallet) {
-        if (now - rewardWallet.lastOnline < oneDay) {
-          if (rewardWallet.streak === 7) {
-            rewardWallet.points += 100;
-            rewardWallet.streak = 1;
-          } else {
-            rewardWallet.points += 10 * rewardWallet.streak;
-            rewardWallet.streak += 1;
-          }
-        }
-
-        rewardWallet.lastOnline = now;
-
-        await rewardWallet.save();
+      if (!rewardWallet) return res.status(404).json("Wallet was not found.");
+      console.log(rewardWallet);
+      const lastOnlineTime = rewardWallet.lastOnlineTime.getTime();
+      const now = new Date().getTime();
+      // amount of time (in days) elapsed after the previous login
+      const daysDiff = Math.floor(
+        (now - lastOnlineTime) / (1000 * 60 * 60 * 24)
+      );
+      // streak based points allottment
+      let streak = daysDiff === 1 ? rewardWallet.streak + 1 : 1;
+      // if more than a day has elapsed then chain has been broken so the streak is reset to 1
+      console.log(daysDiff);
+      if (daysDiff > 1) {
+        streak = 1;
+      }
+      // the points to be added to user wallet
+      let newPoints;
+      if (streak === 7) {
+        newPoints = 100;
+        streak = 0;
       } else {
-        const newRewardWallet = new Reward({
-          userId: user._id,
-        });
+        newPoints = 10 * streak;
+      }
 
-        rewardWallet = await newRewardWallet.save();
-
-        rewardWallet.points += 10;
-        rewardWallet.streak = 1;
-
+      // if 24h has been elapsed from the moment the previous reward was collected
+      if (
+        !rewardWallet.lastRewardTime ||
+        (now - rewardWallet.lastOnlineTime) / (1000 * 60 * 60 * 24) >= 1
+      ) {
+        // updating the object
+        rewardWallet.points += newPoints;
+        console.log(streak);
+        rewardWallet.streak = streak;
+        rewardWallet.lastRewardTime = now;
+        rewardWallet.lastOnlineTime = now;
+        // saving the new object
         await rewardWallet.save();
       }
 

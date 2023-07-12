@@ -10,13 +10,17 @@ const RewardSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    lastOnline: {
+    lastOnlineTime: {
+      type: Date,
+      default: Date.now(),
+    },
+    lastRewardTime: {
       type: Date,
       default: Date.now(),
     },
     streak: {
       type: Number,
-      default: 1,
+      default: 0,
     },
   },
   { timestamps: true }
