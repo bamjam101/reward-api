@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Reward = require("../models/Reward");
 
 const handleUserSignUp = async (req, res) => {
   try {
@@ -58,13 +59,42 @@ const handleUserLogin = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user || (await bcrypt.compare(password, user.password))) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRY,
-      });
+      const now = new Date().getTime();
+      const secondsLimit = 24 * 60 * 60 * 1000;
+
+      let rewardWallet = await Reward.findOne({ userId: user._id });
+
+      if (rewardWallet) {
+        if (now - rewardWallet.lastOnline < secondsLimit) {
+          if (rewardWallet.streak === 7) {
+            rewardWallet.points += 100;
+            rewardWallet.streak = 1;
+          } else {
+            rewardWallet.points += 10 * rewardWallet.streak;
+            rewardWallet.streak += 1;
+          }
+        }
+
+        rewardWallet.lastOnline = now;
+
+        await rewardWallet.save();
+      } else {
+        const newRewardWallet = new Reward({
+          userId: user._id,
+        });
+
+        rewardWallet = await newRewardWallet.save();
+
+        rewardWallet.points += 10;
+        rewardWallet.streak = 1;
+
+        await rewardWallet.save();
+      }
 
       const { password, ...others } = user._doc;
+      const { points } = rewardWallet._doc;
 
-      res.status(200).json({ user: others, token });
+      res.status(200).json({ user: { ...others, points } });
     } else {
       res.status(400).json("Wrong credentials!");
     }
