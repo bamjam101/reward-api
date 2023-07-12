@@ -1,5 +1,4 @@
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Reward = require("../models/Reward");
 
@@ -67,12 +66,12 @@ const handleUserLogin = async (req, res) => {
 
     if (user || (await bcrypt.compare(password, user.password))) {
       const now = new Date().getTime();
-      const secondsLimit = 24 * 60 * 60 * 1000;
+      const oneDay = 24 * 60 * 60 * 1000;
 
       let rewardWallet = await Reward.findOne({ userId: user._id });
 
       if (rewardWallet) {
-        if (now - rewardWallet.lastOnline < secondsLimit) {
+        if (now - rewardWallet.lastOnline < oneDay) {
           if (rewardWallet.streak === 7) {
             rewardWallet.points += 100;
             rewardWallet.streak = 1;
