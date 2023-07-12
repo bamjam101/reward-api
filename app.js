@@ -1,9 +1,12 @@
+// route import statements
 const authRoutes = require("./routes/auth");
 
+// importing necessary packages
 const express = require("express");
 const helmet = require("helmet");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const path = require("path");
 
 require("dotenv").config();
 mongoose.set("strictQuery", true);
