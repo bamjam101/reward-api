@@ -5,7 +5,7 @@ const UserSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      max: 50,
+      max: 21,
       min: 2,
     },
     email: {
@@ -26,8 +26,9 @@ const UserSchema = new mongoose.Schema(
       min: 6,
       max: 30,
     },
-    token: {
-      type: String,
+    interests: {
+      type: Array,
+      default: [],
     },
   },
   { timestamps: true }

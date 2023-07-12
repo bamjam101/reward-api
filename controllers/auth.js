@@ -4,11 +4,18 @@ const User = require("../models/User");
 
 const handleUserSignUp = async (req, res) => {
   try {
-    const { name, phone, email, password, interests, error } = req.body;
+    const {
+      name,
+      phone,
+      email,
+      password: clientPassword,
+      interests,
+      error,
+    } = req.body;
 
     if (error) return res.status(400).json("Application error encountered.");
 
-    if (!name || !phone || !email || !password) {
+    if (!name && !phone && !email && !clientPassword) {
       return res.status(402).send("All inputs are required");
     }
 
@@ -17,7 +24,7 @@ const handleUserSignUp = async (req, res) => {
     if (user) return res.status(400).res("This email is already taken.");
 
     const salt = await bcrypt.genSalt(12);
-    const hashedPass = await bcrypt.hash(password, salt);
+    const hashedPass = await bcrypt.hash(clientPassword, salt);
 
     const newUser = new User({
       name,
@@ -29,9 +36,9 @@ const handleUserSignUp = async (req, res) => {
 
     user = await newUser.save();
 
-    const { password: hashPass, ...others } = user._doc;
+    const { password, ...others } = user._doc;
 
-    res.status(200).send({ user: others });
+    res.status(200).json({ user: others });
   } catch (err) {
     res.status(500).json("Internal Server Error");
     console.log(err);
@@ -44,7 +51,7 @@ const handleUserLogin = async (req, res) => {
 
     if (error) return res.status(400).json("Application error encountered.");
 
-    if (!email || !password) {
+    if (!email && !password) {
       res.status(400).json("All inputs are required.");
     }
 
