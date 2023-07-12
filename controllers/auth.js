@@ -35,11 +35,18 @@ const handleUserSignUp = async (req, res) => {
       interests: interests || [],
     });
 
+    const rewardWallet = new Reward({
+      userId: user._id,
+    });
+
+    await rewardWallet.save();
+
     user = await newUser.save();
 
     const { password, ...others } = user._doc;
+    const { points } = rewardWallet._doc;
 
-    res.status(200).json({ user: others });
+    res.status(200).json({ user: { ...others, points } });
   } catch (err) {
     res.status(500).json("Internal Server Error");
     console.log(err);

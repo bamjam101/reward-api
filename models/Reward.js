@@ -8,6 +8,7 @@ const RewardSchema = new mongoose.Schema(
     },
     points: {
       type: Number,
+      default: 0,
     },
     lastOnline: {
       type: Date,
@@ -15,6 +16,7 @@ const RewardSchema = new mongoose.Schema(
     },
     streak: {
       type: Number,
+      default: 1,
     },
   },
   { timestamps: true }
