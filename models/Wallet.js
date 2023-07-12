@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const RewardSchema = new mongoose.Schema(
+const WalletSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -8,22 +8,22 @@ const RewardSchema = new mongoose.Schema(
     },
     points: {
       type: Number,
-      default: 0,
+      default: 10,
     },
-    lastOnlineTime: {
+    lastSeen: {
       type: Date,
-      default: Date.now(),
+      default: new Date(),
     },
-    lastRewardTime: {
+    lastReward: {
       type: Date,
-      default: Date.now(),
+      default: new Date(),
     },
     streak: {
       type: Number,
-      default: 0,
+      default: 1,
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Reward", RewardSchema);
+module.exports = mongoose.model("Wallet", WalletSchema);
